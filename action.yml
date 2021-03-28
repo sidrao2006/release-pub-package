@@ -46,20 +46,24 @@ inputs:
   
   access-token:
     description: 'The access token required to authenticate with the pub tool'
-    required: true
+    required: false
   
   refresh-token:
     description: 'The refresh token required to authenticate with the pub tool'
-    required: true
+    required: false
   
   id-token:
     description: 'The id token required to authenticate with the pub tool'
-    required: true
+    required: false
   
   token-endpoint:
     description: 'The token endpoint required to authenticate with the pub tool'
-    required: true
+    required: false
   
   expiration:
     description: 'The expiration value required to authenticate with the pub tool'
-    required: true
+    required: false
+  
+  pub-credentials-file:
+    description: 'The credentials file to be used to authorize with pub'
+    required: false

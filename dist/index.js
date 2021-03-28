@@ -11343,11 +11343,13 @@ async function getActionInputs(octokit) {
       inputs.shouldRunPubScoreTest = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('should-run-pub-score-test').toUpperCase() === 'TRUE'
       inputs.pubScoreMinPoints = Number.parseInt(_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('pub-score-min-points'))
 
-      inputs.accessToken = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('access-token', { required: true })
-      inputs.refreshToken = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('refresh-token', { required: true })
-      inputs.idToken = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('id-token', { required: true })
-      inputs.tokenEndpoint = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('token-endpoint', { required: true })
-      inputs.expiration = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('expiration', { required: true })
+      inputs.accessToken = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('access-token')
+      inputs.refreshToken = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('refresh-token')
+      inputs.idToken = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('id-token')
+      inputs.tokenEndpoint = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('token-endpoint')
+      inputs.expiration = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('expiration')
+
+      inputs.pubCredentialsFile = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('pub-credentials-file')
    } catch (err) {
       _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(err)
    }
@@ -11456,7 +11458,8 @@ async function publishPackageToPub(inputs) {
       refreshToken: inputs.refreshToken,
       idToken: inputs.idToken,
       tokenEndpoint: inputs.tokenEndpoint,
-      expiration: inputs.expiration
+      expiration: inputs.expiration,
+      pubCredentialsFile: inputs.pubCredentialsFile
    })
 
    await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('flutter', ['pub', 'publish', '--force', '--verbose'])
@@ -11469,9 +11472,15 @@ function setUpPubAuth({
    refreshToken,
    idToken,
    tokenEndpoint,
-   expiration
+   expiration,
+   pubCredentialsFile
 }) {
-   const credentials = {
+   if (!(
+      (accessToken && refreshToken && idToken && tokenEndpoint && expiration) ||
+      pubCredentialsFile
+   )) _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed('Neither tokens nor the credential file was found to authorize with pub')
+
+   const credentials = process.env.PUB_CREDENTIALS || {
       accessToken: accessToken,
       refreshToken: refreshToken,
       idToken: idToken,

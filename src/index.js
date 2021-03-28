@@ -87,11 +87,13 @@ async function getActionInputs(octokit) {
       inputs.shouldRunPubScoreTest = core.getInput('should-run-pub-score-test').toUpperCase() === 'TRUE'
       inputs.pubScoreMinPoints = Number.parseInt(core.getInput('pub-score-min-points'))
 
-      inputs.accessToken = core.getInput('access-token', { required: true })
-      inputs.refreshToken = core.getInput('refresh-token', { required: true })
-      inputs.idToken = core.getInput('id-token', { required: true })
-      inputs.tokenEndpoint = core.getInput('token-endpoint', { required: true })
-      inputs.expiration = core.getInput('expiration', { required: true })
+      inputs.accessToken = core.getInput('access-token')
+      inputs.refreshToken = core.getInput('refresh-token')
+      inputs.idToken = core.getInput('id-token')
+      inputs.tokenEndpoint = core.getInput('token-endpoint')
+      inputs.expiration = core.getInput('expiration')
+
+      inputs.pubCredentialsFile = core.getInput('pub-credentials-file')
    } catch (err) {
       core.setFailed(err)
    }
@@ -200,7 +202,8 @@ async function publishPackageToPub(inputs) {
       refreshToken: inputs.refreshToken,
       idToken: inputs.idToken,
       tokenEndpoint: inputs.tokenEndpoint,
-      expiration: inputs.expiration
+      expiration: inputs.expiration,
+      pubCredentialsFile: inputs.pubCredentialsFile
    })
 
    await exec.exec('flutter', ['pub', 'publish', '--force', '--verbose'])
@@ -213,9 +216,15 @@ function setUpPubAuth({
    refreshToken,
    idToken,
    tokenEndpoint,
-   expiration
+   expiration,
+   pubCredentialsFile
 }) {
-   const credentials = {
+   if (!(
+      (accessToken && refreshToken && idToken && tokenEndpoint && expiration) ||
+      pubCredentialsFile
+   )) core.setFailed('Neither tokens nor the credential file was found to authorize with pub')
+
+   const credentials = process.env.PUB_CREDENTIALS || {
       accessToken: accessToken,
       refreshToken: refreshToken,
       idToken: idToken,
