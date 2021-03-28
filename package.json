@@ -1,7 +1,7 @@
 {
   "name": "release_pub_package",
   "version": "1.0.0",
-  "description": "Release a flutter/dart package to pub and on Github",
+  "description": "Upload flutter/dart packages to pub and create releases on Github",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
