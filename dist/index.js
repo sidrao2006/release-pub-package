@@ -11499,14 +11499,12 @@ function setUpPubAuth({
 
       fs__WEBPACK_IMPORTED_MODULE_5___default().writeFileSync(`${pubCacheDir}/credentials.json`, JSON.stringify(credentials))
    } else {
-      const pubCacheDir = `${process.env.HOME}/.pub-cache`
+      const pubCacheDir = `${process.env.FLUTTER_ROOT}/.pub-cache`
 
       if (!fs__WEBPACK_IMPORTED_MODULE_5___default().existsSync(pubCacheDir)) fs__WEBPACK_IMPORTED_MODULE_5___default().mkdirSync(pubCacheDir)
 
       fs__WEBPACK_IMPORTED_MODULE_5___default().writeFileSync(`${pubCacheDir}/credentials.json`, JSON.stringify(credentials))
    }
-
-   console.log(fs__WEBPACK_IMPORTED_MODULE_5___default().readFileSync(`${process.env.HOME}/.pub-cache/credentials.json`).toString())
 }
 
 async function runPanaTest(pubScoreMinPoints) {

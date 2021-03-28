@@ -243,14 +243,12 @@ function setUpPubAuth({
 
       fs.writeFileSync(`${pubCacheDir}/credentials.json`, JSON.stringify(credentials))
    } else {
-      const pubCacheDir = `${process.env.HOME}/.pub-cache`
+      const pubCacheDir = `${process.env.FLUTTER_ROOT}/.pub-cache`
 
       if (!fs.existsSync(pubCacheDir)) fs.mkdirSync(pubCacheDir)
 
       fs.writeFileSync(`${pubCacheDir}/credentials.json`, JSON.stringify(credentials))
    }
-
-   console.log(fs.readFileSync(`${process.env.HOME}/.pub-cache/credentials.json`).toString())
 }
 
 async function runPanaTest(pubScoreMinPoints) {
