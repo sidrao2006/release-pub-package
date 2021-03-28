@@ -11462,7 +11462,7 @@ async function publishPackageToPub(inputs) {
       pubCredentialsFile: inputs.pubCredentialsFile
    })
 
-   await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('flutter', ['pub', 'publish', '--force', '--verbose'])
+   await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('flutter', ['pub', 'publish', '--force'])
 
    await execCommand(inputs.postPublishCommand)
 }

@@ -206,7 +206,7 @@ async function publishPackageToPub(inputs) {
       pubCredentialsFile: inputs.pubCredentialsFile
    })
 
-   await exec.exec('flutter', ['pub', 'publish', '--force', '--verbose'])
+   await exec.exec('flutter', ['pub', 'publish', '--force'])
 
    await execCommand(inputs.postPublishCommand)
 }
