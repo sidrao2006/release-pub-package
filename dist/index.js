@@ -11459,7 +11459,7 @@ async function publishPackageToPub(inputs) {
       expiration: inputs.expiration
    })
 
-   await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('flutter', ['pub', 'publish', '--force'])
+   await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('flutter', ['pub', 'publish', '--force', '--verbose'])
 
    await execCommand(inputs.postPublishCommand)
 }

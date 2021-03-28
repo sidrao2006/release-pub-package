@@ -203,7 +203,7 @@ async function publishPackageToPub(inputs) {
       expiration: inputs.expiration
    })
 
-   await exec.exec('flutter', ['pub', 'publish', '--force'])
+   await exec.exec('flutter', ['pub', 'publish', '--force', '--verbose'])
 
    await execCommand(inputs.postPublishCommand)
 }
