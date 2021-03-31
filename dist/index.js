@@ -11492,7 +11492,7 @@ function setUpPubAuth({
       pubCredentialsFile
    )) _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed('Neither tokens nor the credential file was found to authorize with pub')
 
-   const credentials = process.env.PUB_CREDENTIALS || {
+   const credentials = pubCredentialsFile || {
       accessToken: accessToken,
       refreshToken: refreshToken,
       idToken: idToken,

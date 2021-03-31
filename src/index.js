@@ -236,7 +236,7 @@ function setUpPubAuth({
       pubCredentialsFile
    )) core.setFailed('Neither tokens nor the credential file was found to authorize with pub')
 
-   const credentials = process.env.PUB_CREDENTIALS || {
+   const credentials = pubCredentialsFile || {
       accessToken: accessToken,
       refreshToken: refreshToken,
       idToken: idToken,
