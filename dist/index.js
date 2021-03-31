@@ -11281,7 +11281,7 @@ async function run() {
 
    // Get latest version and release notes from changelog
 
-   addFakeChangelogHeading(changelogFile)
+   const originalData = addFakeChangelogHeading(changelogFile)
 
    let version, body
 
@@ -11289,6 +11289,8 @@ async function run() {
       version = changelog.versions[0].version
       body = changelog.versions[0].body
    })
+
+   removeFakeChangelogHeading(changelogFile, originalData)
 
    // Check if latest version in changelog has already been released
 
@@ -11378,6 +11380,16 @@ function addFakeChangelogHeading(changelogFile) {
    fs__WEBPACK_IMPORTED_MODULE_5___default().writeSync(fd, buffer, 0, buffer.length, 0) // write new data
 
    fs__WEBPACK_IMPORTED_MODULE_5___default().appendFileSync(changelogFile, data) // append old data
+
+   fs__WEBPACK_IMPORTED_MODULE_5___default().closeSync(fd)
+
+   return data
+}
+
+function removeFakeChangelogHeading(changelogFile, originalData) {
+   const fd = fs__WEBPACK_IMPORTED_MODULE_5___default().openSync(changelogFile, 'w+')
+
+   fs__WEBPACK_IMPORTED_MODULE_5___default().writeSync(fd, originalData, 0, originalData.length, 0) // rewrite the original file
 
    fs__WEBPACK_IMPORTED_MODULE_5___default().closeSync(fd)
 }
