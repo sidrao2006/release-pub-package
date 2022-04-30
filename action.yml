@@ -1,10 +1,6 @@
 name: Release Pub Package
 description: Release a flutter/dart package to pub and on Github
 
-runs:
-  using: node12
-  main: dist/index.js
-
 inputs:
   previous-version:
     description: 'The latest active version released'
@@ -67,3 +63,32 @@ inputs:
   pub-credentials-file:
     description: 'The credentials file to be used to authorize with pub'
     required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Setup NodeJS
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install Packages
+      run: npm install
+      shell: bash
+
+    - name: Release package to Github
+      run: node $GITHUB_ACTION_PATH/dist/create-release.js
+      shell: bash
+
+    - name: Setup Flutter SDK
+      uses: subosito/flutter-action@v1
+      with:
+        channel: 'stable'
+
+    - name: Setup flutter
+      run: flutter config --no-analytics
+      shell: bash
+
+    - name: Publish package to pub.dev
+      run: node $GITHUB_ACTION_PATH/dist/publish-package.js
+      shell: bash
