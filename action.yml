@@ -2,7 +2,7 @@ name: Release Pub Package
 description: Release a flutter/dart package on Github
 
 runs:
-  using: node12
+  using: node20
   main: dist/index.js
 
 inputs:
