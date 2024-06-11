@@ -1,9 +1,16 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as github from '@actions/github'
+import * as tc from '@actions/tool-cache'
 import { Octokit } from '@octokit/action'
 import parseChangelog from 'changelog-parser'
 import fs from 'fs'
+
+// Latest Stable Flutter Version (at the time of release) that support all required features.
+
+const flutterWinDownloadUrl = 'https://storage.googleapis.com/flutter_infra/releases/stable/windows/flutter_windows_3.22.2-stable.zip'
+const flutterMacOSDownloadUrl = 'https://storage.googleapis.com/flutter_infra/releases/stable/macos/flutter_macos_3.22.2-stable.zip'
+const flutterLinuxDownloadUrl = 'https://storage.googleapis.com/flutter_infra/releases/stable/linux/flutter_linux_3.22.2-stable.tar.xz'
 
 async function run() {
    const octokit = new Octokit()
@@ -44,12 +51,17 @@ async function run() {
       preReleaseCommand: inputs.preReleaseCommand,
       postReleaseCommand: inputs.postReleaseCommand,
       isDraft: inputs.isDraft,
-      version,
-      body
+      version: version,
+      body: body
    })
 
-   // This Github action no longer supports publishing to pub.dev
-   // Please see https://dart.dev/tools/pub/automated-publishing#triggering-automated-publishing-from-github-actions
+   // Set up the Flutter SDK
+
+   await setUpFlutterSDK()
+
+   // Publish package
+
+   await publishPackageToPub(inputs)
 }
 
 process.on('unhandledRejection', err => { throw err })
@@ -70,6 +82,18 @@ async function getActionInputs(octokit) {
 
       inputs.preReleaseCommand = core.getInput('pre-release-command')
       inputs.postReleaseCommand = core.getInput('post-release-command')
+
+      inputs.prePublishCommand = core.getInput('pre-publish-command')
+      inputs.postPublishCommand = core.getInput('post-publish-command')
+
+      inputs.shouldRunPubScoreTest = core.getInput('should-run-pub-score-test').toUpperCase() === 'TRUE'
+      inputs.pubScoreMinPoints = Number.parseInt(core.getInput('pub-score-min-points'))
+
+      inputs.accessToken = core.getInput('access-token')
+      inputs.refreshToken = core.getInput('refresh-token')
+      inputs.idToken = core.getInput('id-token')
+      inputs.tokenEndpoint = core.getInput('token-endpoint')
+      inputs.expiration = core.getInput('expiration')
 
       inputs.pubCredentialsFile = core.getInput('pub-credentials-file')
    } catch (err) {
@@ -143,10 +167,123 @@ async function createRelease(octokit = new Octokit(), {
       name: `v${version}`,
       tag_name: `v${version}`,
       target_commitish: github.context.sha,
-      body,
+      body: body,
       draft: isDraft,
       prerelease: version.includes('-')
    })
 
    await execCommand(postReleaseCommand)
+}
+
+async function setUpFlutterSDK() {
+   core.exportVariable('FLUTTER_ROOT', `${process.env.HOME}/flutter`)
+
+   const cachedTool = tc.find('flutter', '2.x')
+
+   if (!cachedTool) {
+      if (process.platform === 'win32') {
+         const flutterPath = await tc.downloadTool(flutterWinDownloadUrl)
+         await tc.extractZip(flutterPath, process.env.HOME)
+
+         tc.cacheDir(process.env.FLUTTER_ROOT, 'flutter', '2.0.3')
+      } else if (process.platform === 'darwin') {
+         const flutterPath = await tc.downloadTool(flutterMacOSDownloadUrl)
+         await tc.extractZip(flutterPath, process.env.HOME)
+
+         tc.cacheDir(process.env.FLUTTER_ROOT, 'flutter', '2.0.3')
+      } else {
+         const flutterPath = await tc.downloadTool(flutterLinuxDownloadUrl)
+         await tc.extractTar(flutterPath, process.env.HOME, 'x')
+
+         tc.cacheDir(process.env.FLUTTER_ROOT, 'flutter', '2.0.3')
+      }
+   }
+
+   core.addPath(`${cachedTool || process.env.FLUTTER_ROOT}/bin`)
+}
+
+async function publishPackageToPub(inputs) {
+   await execCommand(inputs.prePublishCommand)
+
+   if (inputs.shouldRunPubScoreTest) await runPanaTest(inputs.pubScoreMinPoints)
+
+   // Setup auth for pub
+
+   setUpPubAuth({
+      accessToken: inputs.accessToken,
+      refreshToken: inputs.refreshToken,
+      idToken: inputs.idToken,
+      tokenEndpoint: inputs.tokenEndpoint,
+      expiration: inputs.expiration,
+      pubCredentialsFile: inputs.pubCredentialsFile
+   })
+
+   await exec.exec('flutter', ['pub', 'publish', '--force'])
+
+   await execCommand(inputs.postPublishCommand)
+}
+
+function setUpPubAuth({
+   accessToken,
+   refreshToken,
+   idToken,
+   tokenEndpoint,
+   expiration,
+   pubCredentialsFile
+}) {
+   if (!(
+      (accessToken && refreshToken && idToken && tokenEndpoint && expiration) ||
+      pubCredentialsFile
+   )) core.setFailed('Neither tokens nor the credential file was found to authorize with pub')
+
+   const credentials = pubCredentialsFile || {
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      idToken: idToken,
+      tokenEndpoint: tokenEndpoint,
+      scopes: [
+         'openid',
+         'https://www.googleapis.com/auth/userinfo.email'
+      ],
+      expiration: Number.parseInt(expiration)
+   }
+
+   if (process.platform === 'win32') {
+      const pubCacheDir = `${process.env.APPDATA}/Pub/Cache`
+
+      if (!fs.existsSync(pubCacheDir)) fs.mkdirSync(pubCacheDir)
+
+      fs.writeFileSync(`${pubCacheDir}/credentials.json`, JSON.stringify(credentials))
+   } else {
+      const pubCacheDir = `${process.env.FLUTTER_ROOT}/.pub-cache`
+
+      if (!fs.existsSync(pubCacheDir)) fs.mkdirSync(pubCacheDir)
+
+      fs.writeFileSync(`${pubCacheDir}/credentials.json`, JSON.stringify(credentials))
+   }
+}
+
+async function runPanaTest(pubScoreMinPoints) {
+   let panaOutput = ''
+
+   await exec.exec('flutter', ['pub', 'global', 'activate', 'pana'])
+
+   await exec.exec('flutter', ['pub', 'global', 'run', 'pana', process.env.GITHUB_WORKSPACE, '--json', '--no-warning'], {
+      listeners: {
+         stdout: data => { if (data.toString()) panaOutput += data.toString() }
+      }
+   })
+
+   if (panaOutput.includes('undefined')) panaOutput = panaOutput.replace('undefined', '')
+
+   const panaResult = JSON.parse(panaOutput)
+
+   if (isNaN(pubScoreMinPoints)) core.setFailed('run-pub-score-test was set to true but no value for pub-score-min-points was provided')
+
+   if (panaResult.scores.grantedPoints < pubScoreMinPoints) {
+      for (const test in panaResult.report.sections) {
+         if (test.status !== 'passed') core.warning(test.title + '\n\n\n' + test.summary)
+      }
+      core.error('Pub score test failed')
+   }
 }
