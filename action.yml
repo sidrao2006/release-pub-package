@@ -1,5 +1,5 @@
 name: Release Pub Package
-description: Release a flutter/dart package on Github
+description: Release a flutter/dart package to pub and on Github
 
 runs:
   using: node20
@@ -25,4 +25,45 @@ inputs:
 
   post-release-command:
     description: 'Commands to run after publishing the release on Github'
+    required: false
+
+  pre-publish-command:
+    description: 'Commands to run before publishing to pub.dev'
+    required: false
+
+  post-publish-command:
+    description: 'Commands to run after publishing to pub.dev'
+    required: false
+  
+  should-run-pub-score-test:
+    description: 'Whether to run pana tests, used by pub.dev to determine package score'
+    required: false
+    default: false
+
+  pub-score-min-points:
+    description: 'Minimum required points (out of 100) to pass the pub score test'
+    required: false
+  
+  access-token:
+    description: 'The access token required to authenticate with the pub tool'
+    required: false
+  
+  refresh-token:
+    description: 'The refresh token required to authenticate with the pub tool'
+    required: false
+  
+  id-token:
+    description: 'The id token required to authenticate with the pub tool'
+    required: false
+  
+  token-endpoint:
+    description: 'The token endpoint required to authenticate with the pub tool'
+    required: false
+  
+  expiration:
+    description: 'The expiration value required to authenticate with the pub tool'
+    required: false
+  
+  pub-credentials-file:
+    description: 'The credentials file to be used to authorize with pub'
     required: false
